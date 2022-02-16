@@ -1,3 +1,7 @@
+![Tests](https://github.com/SigmaHQ/pySigma-pipeline-crowdstrike/actions/workflows/test.yml/badge.svg)
+![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/thomaspatzke/46f41e1fcf5eaab808ff5742401ac42d/raw/SigmaHQ-pySigma-pipeline-crowdstrike-coverage.json)
+![Status](https://img.shields.io/badge/Status-pre--release-orange)
+
 # pySigma CrowdStrike Processing Pipeline
 
 This package provides a processing pipeline for CrowdStrike events. It was mainly written for Falcon Data Replicator data but Splunk queries should also work in the CrowdStrike Splunk.
