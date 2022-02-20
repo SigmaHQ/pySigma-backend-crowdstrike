@@ -7,7 +7,7 @@ cond_field_parentbasefilename = IncludeFieldCondition(fields=["ParentBaseFileNam
 
 def crowdstrike_fdr_pipeline():
     return ProcessingPipeline(
-        name="Generic Log Sources to CrowdStrike Splunk Transformation",
+        name="Generic Log Sources to CrowdStrike Falcon Data Replicator (FDR) Transformation",
         priority=10,
         items=[
             # Process Creation
