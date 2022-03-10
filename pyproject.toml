@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysigma-pipeline-crowdstrike"
-version = "0.1.1"
+version = "0.1.2"
 description = "pySigma CrowdStrike processing pipelines"
 authors = ["Thomas Patzke <thomas@patzke.org>"]
 license = "LGPL-2.1-only"
@@ -10,7 +10,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-pysigma = "^0.2.0"
+pysigma = "^0.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.2"
