@@ -74,15 +74,6 @@ def crowdstrike_fdr_pipeline():
                 ]
             ),
             ProcessingItem(
-                identifier="cs_network_connection_fieldmapping",
-                transformation=FieldMappingTransformation({
-                    "QueryName": "DomainName",
-                }),
-                rule_conditions=[
-                    logsource_windows_dns_query(),
-                ]
-            ),
-            ProcessingItem(
                 identifier="cs_network_connection_drop_initiated",
                 transformation=DropDetectionItemTransformation(),
                 rule_conditions=[
@@ -101,6 +92,38 @@ def crowdstrike_fdr_pipeline():
                 ),
                 rule_conditions=[
                     logsource_windows_network_connection(),
+                ]
+            ),
+
+            # DNS Requests
+            ProcessingItem(
+                identifier="cs_dns_query_eventtype",
+                transformation=AddConditionTransformation({
+                    "event_simpleName": "DnsRequest",
+                }),
+                rule_conditions=[
+                    logsource_windows_dns_query(),
+                ]
+            ),
+            ProcessingItem(
+                identifier="cs_dns_query_fieldmapping",
+                transformation=FieldMappingTransformation({
+                    "QueryName": "DomainName",
+                    "QueryResults": "IP4Records",
+                }),
+                rule_conditions=[
+                    logsource_windows_dns_query(),
+                ]
+            ),
+            ProcessingItem(
+                identifier="cs_dns_query_logsource",
+                transformation=ChangeLogsourceTransformation(
+                    category="dns_query",
+                    product="windows",
+                    service="crowdstrike",
+                ),
+                rule_conditions=[
+                    logsource_windows_dns_query(),
                 ]
             ),
 

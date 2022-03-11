@@ -86,6 +86,20 @@ def incoming_network_connection_sigma_rule():
             condition: sel
     """)
 
+@pytest.fixture
+def dns_query_sigma_rule():
+    return SigmaCollection.from_yaml("""
+        title: DNS Query Test
+        status: test
+        logsource:
+            category: dns_query
+            product: windows
+        detection:
+            sel:
+                QueryName: test.invalid
+            condition: sel
+    """)
+
 def test_crowdstrike_pipeline(resolver : ProcessingPipelineResolver, process_creation_sigma_rule):
     pipeline = resolver.resolve_pipeline("crowdstrike")
     backend = TextQueryTestBackend(pipeline)
@@ -111,3 +125,8 @@ def test_crowdstrike_network_connect_incoming(resolver : ProcessingPipelineResol
     pipeline = resolver.resolve_pipeline("crowdstrike")
     backend = TextQueryTestBackend(pipeline)
     assert backend.convert(incoming_network_connection_sigma_rule) == ["event_simpleName=\"NetworkReceiveAcceptIP4\" and RemoteAddressIP4=\"1.2.3.4\""]
+
+def test_crowdstrike_dns_query(resolver : ProcessingPipelineResolver, dns_query_sigma_rule):
+    pipeline = resolver.resolve_pipeline("crowdstrike")
+    backend = TextQueryTestBackend(pipeline)
+    assert backend.convert(dns_query_sigma_rule) == ["event_simpleName=\"DnsRequest\" and DomainName=\"test.invalid\""]
