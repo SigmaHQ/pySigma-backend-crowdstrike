@@ -201,7 +201,7 @@ diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pysigma"
-version = "0.4.0"
+version = "0.5.0"
 description = "Sigma rule processing and conversion tools"
 category = "main"
 optional = false
@@ -315,7 +315,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "f8d29fe351990fa6d8f968657534fcc1d4c5f833894232350b66bd5de672a98c"
+content-hash = "81391944fbaae6d44d3cbdfe24aaa4ede2ed087647ef2d323594cb31cc5016d4"
 
 [metadata.files]
 astroid = [
@@ -486,8 +486,8 @@ pyparsing = [
     {file = "pyparsing-3.0.7.tar.gz", hash = "sha256:18ee9022775d270c55187733956460083db60b37d0d0fb357445f3094eed3eea"},
 ]
 pysigma = [
-    {file = "pySigma-0.4.0-py3-none-any.whl", hash = "sha256:00519a65cc6bc1aa88a3fe65a351e32f727ab7f287a441c6cf7cf63e8fc1e132"},
-    {file = "pySigma-0.4.0.tar.gz", hash = "sha256:e96038dcbd7e461c1c47c95bd8857e9f1a385edae56f5cf9d9bd2e3d25dffcf4"},
+    {file = "pySigma-0.5.0-py3-none-any.whl", hash = "sha256:1311a83e3a8bc32791bac4faad9e0204636eb4874ee392918f7c0ab903bdc487"},
+    {file = "pySigma-0.5.0.tar.gz", hash = "sha256:b77e26fc32a05fbfa7d7e40b536d0be799fa642dc971e0e49b3b781f52e33ffc"},
 ]
 pytest = [
     {file = "pytest-6.2.5-py3-none-any.whl", hash = "sha256:7310f8d27bc79ced999e760ca304d69f6ba6c6649c0b60fb0e04a4a77cacc134"},
