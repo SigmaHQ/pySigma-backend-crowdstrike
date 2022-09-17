@@ -79,7 +79,7 @@ def crowdstrike_fdr_pipeline():
                 rule_conditions=[
                     logsource_windows_network_connection(),
                 ],
-                detection_item_conditions=[
+                field_name_conditions=[
                     IncludeFieldCondition(fields=["Initiated"]),
                 ],
             ),
@@ -131,8 +131,10 @@ def crowdstrike_fdr_pipeline():
             ProcessingItem(
                 identifier="cs_parentbasefilename_fail_completepath",
                 transformation=DetectionItemFailureTransformation("Only file name of parent image is available in CrowdStrike events."),
-                detection_item_conditions=[
+                field_name_conditions=[
                     cond_field_parentbasefilename,
+                ],
+                detection_item_conditions=[
                     MatchStringCondition(
                         cond="any",
                         pattern="^\\*\\\\[^\\\\]+$",
@@ -146,7 +148,7 @@ def crowdstrike_fdr_pipeline():
                     regex="^\\*\\\\([^\\\\]+)$",
                     replacement="\\1",
                 ),
-                detection_item_conditions=[
+                field_name_conditions=[
                     cond_field_parentbasefilename,
                 ]
             ),
