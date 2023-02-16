@@ -42,6 +42,21 @@ def process_creation_sigma_rule_parentimage():
     """)
 
 @pytest.fixture
+def process_creation_sigma_rule_parentimage_without_slash():
+    return SigmaCollection.from_yaml("""
+        title: Process Creation Test
+        status: test
+        logsource:
+            category: process_creation
+            product: windows
+        detection:
+            sel:
+                CommandLine: "test.exe foo bar"
+                ParentImage: "*parent.exe"
+            condition: sel
+    """)
+
+@pytest.fixture
 def process_creation_sigma_rule_parentimage_path():
     return SigmaCollection.from_yaml("""
         title: Process Creation Test
@@ -109,6 +124,11 @@ def test_crowdstrike_pipeline_parentimage(resolver : ProcessingPipelineResolver,
     pipeline = resolver.resolve_pipeline("crowdstrike")
     backend = TextQueryTestBackend(pipeline)
     assert backend.convert(process_creation_sigma_rule_parentimage) == ["event_simpleName=\"ProcessRollup2\" and CommandLine=\"test.exe foo bar\" and ParentBaseFileName=\"parent.exe\""]
+
+def test_crowdstrike_pipeline_parentimage_without_slash(resolver : ProcessingPipelineResolver, process_creation_sigma_rule_parentimage_without_slash):
+    pipeline = resolver.resolve_pipeline("crowdstrike")
+    backend = TextQueryTestBackend(pipeline)
+    assert backend.convert(process_creation_sigma_rule_parentimage_without_slash) == ["event_simpleName=\"ProcessRollup2\" and CommandLine=\"test.exe foo bar\" and ParentBaseFileName endswith \"parent.exe\""]
 
 def test_crowdstrike_pipeline_parentimage_path(resolver : ProcessingPipelineResolver, process_creation_sigma_rule_parentimage_path):
     pipeline = resolver.resolve_pipeline("crowdstrike")

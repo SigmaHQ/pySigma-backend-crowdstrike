@@ -137,7 +137,7 @@ def crowdstrike_fdr_pipeline():
                 detection_item_conditions=[
                     MatchStringCondition(
                         cond="any",
-                        pattern="^\\*\\\\[^\\\\]+$",
+                        pattern="^\\*\\\\?[^\\\\]+$",
                         negate=True,
                     )
                 ]
