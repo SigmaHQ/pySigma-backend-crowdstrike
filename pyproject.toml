@@ -2,6 +2,7 @@
 name = "pysigma-pipeline-crowdstrike"
 version = "1.0.1"
 description = "pySigma CrowdStrike processing pipelines"
+readme = "README.md"
 authors = ["Thomas Patzke <thomas@patzke.org>"]
 license = "LGPL-2.1-only"
 repository = "https://github.com/SigmaHQ/pySigma-pipeline-crowdstrike"
