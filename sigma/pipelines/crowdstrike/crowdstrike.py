@@ -14,7 +14,7 @@ def crowdstrike_fdr_pipeline():
             ProcessingItem(
                 identifier="cs_process_creation_eventtype",
                 transformation=AddConditionTransformation({
-                    "event_simpleName": "ProcessRollup2",
+                    "event_simpleName": ["ProcessRollup2", "SyntheticProcessRollup2"],
                 }),
                 rule_conditions=[
                     logsource_windows_process_creation(),

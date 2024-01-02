@@ -118,17 +118,17 @@ def dns_query_sigma_rule():
 def test_crowdstrike_pipeline(resolver : ProcessingPipelineResolver, process_creation_sigma_rule):
     pipeline = resolver.resolve_pipeline("crowdstrike")
     backend = TextQueryTestBackend(pipeline)
-    assert backend.convert(process_creation_sigma_rule) == ["event_simpleName=\"ProcessRollup2\" and CommandLine=\"test.exe foo bar\" and ImageFileName endswith \"\\test.exe\""]
+    assert backend.convert(process_creation_sigma_rule) == ["(event_simpleName in (\"ProcessRollup2\", \"SyntheticProcessRollup2\")) and CommandLine=\"test.exe foo bar\" and ImageFileName endswith \"\\test.exe\""]
 
 def test_crowdstrike_pipeline_parentimage(resolver : ProcessingPipelineResolver, process_creation_sigma_rule_parentimage):
     pipeline = resolver.resolve_pipeline("crowdstrike")
     backend = TextQueryTestBackend(pipeline)
-    assert backend.convert(process_creation_sigma_rule_parentimage) == ["event_simpleName=\"ProcessRollup2\" and CommandLine=\"test.exe foo bar\" and ParentBaseFileName=\"parent.exe\""]
+    assert backend.convert(process_creation_sigma_rule_parentimage) == ["(event_simpleName in (\"ProcessRollup2\", \"SyntheticProcessRollup2\")) and CommandLine=\"test.exe foo bar\" and ParentBaseFileName=\"parent.exe\""]
 
 def test_crowdstrike_pipeline_parentimage_without_slash(resolver : ProcessingPipelineResolver, process_creation_sigma_rule_parentimage_without_slash):
     pipeline = resolver.resolve_pipeline("crowdstrike")
     backend = TextQueryTestBackend(pipeline)
-    assert backend.convert(process_creation_sigma_rule_parentimage_without_slash) == ["event_simpleName=\"ProcessRollup2\" and CommandLine=\"test.exe foo bar\" and ParentBaseFileName endswith \"parent.exe\""]
+    assert backend.convert(process_creation_sigma_rule_parentimage_without_slash) == ["(event_simpleName in (\"ProcessRollup2\", \"SyntheticProcessRollup2\")) and CommandLine=\"test.exe foo bar\" and ParentBaseFileName endswith \"parent.exe\""]
 
 def test_crowdstrike_pipeline_parentimage_path(resolver : ProcessingPipelineResolver, process_creation_sigma_rule_parentimage_path):
     pipeline = resolver.resolve_pipeline("crowdstrike")
