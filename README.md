@@ -2,7 +2,7 @@
 ![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/thomaspatzke/46f41e1fcf5eaab808ff5742401ac42d/raw)
 ![Status](https://img.shields.io/badge/Status-pre--release-orange)
 
-# pySigma CrowdStrike Processing Pipeline
+# pySigma CrowdStrike Backend
 
 This is the CrowdStrike backend for pySigma. It provides the package `sigma.backends.crowdstrike` with the `LogScaleBackend` class.
 
