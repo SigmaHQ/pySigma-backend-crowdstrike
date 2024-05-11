@@ -8,7 +8,7 @@ This is the CrowdStrike backend for pySigma. It provides the package `sigma.back
 
 Further it contains the following processing pipelines:
 - `crowdstrike_fdr_pipeline` which was mainly written for the Falcon data Replicator data but Splunk queries should work in the legacy CrowdStrike Splunk
-- `crowdstrike_falcon_pipeline` which was written for data collected by the CrowdStrike Falcon Agent stored in CrowdStrike Logscale. It effectively translate rules to the CrowdStrike Query Language used by LogScale.
+- `crowdstrike_falcon_pipeline` which was written for data collected by the CrowdStrike Falcon Agent stored in CrowdStrike Logscale. It effectively translates rules to the CrowdStrike Query Language used by LogScale.
 
 ## Supported Rules
 ### Falcon Pipeline
