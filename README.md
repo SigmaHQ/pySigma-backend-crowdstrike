@@ -4,7 +4,7 @@
 
 # pySigma CrowdStrike Processing Pipeline
 
-This is the CrowdStrike backend for pySigma. It provides the package `sigma.backends.logscale` with the `LogScaleBackend` class.
+This is the CrowdStrike backend for pySigma. It provides the package `sigma.backends.crowdstrike` with the `LogScaleBackend` class.
 
 Further it contains the following processing pipelines:
 - `crowdstrike_fdr_pipeline` which was mainly written for the Falcon data Replicator data but Splunk queries should work in the legacy CrowdStrike Splunk
