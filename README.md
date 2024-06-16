@@ -2,23 +2,51 @@
 ![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/thomaspatzke/46f41e1fcf5eaab808ff5742401ac42d/raw)
 ![Status](https://img.shields.io/badge/Status-pre--release-orange)
 
-# pySigma CrowdStrike Processing Pipeline
+# pySigma CrowdStrike Backend
 
-This package provides a processing pipeline for CrowdStrike events. It was mainly written for Falcon Data Replicator data but Splunk queries should also work in the CrowdStrike Splunk.
+This is the CrowdStrike backend for pySigma. It provides the package `sigma.backends.crowdstrike` with the `LogScaleBackend` class.
 
-It provides the package `sigma.pipeline.crowdstrike` with the `crowdstrike_fdr_pipeline` function that returns a ProcessingPipeline object.
+Further it contains the following processing pipelines:
+- `crowdstrike_fdr_pipeline` which was mainly written for the Falcon data Replicator data but Splunk queries should work in the legacy CrowdStrike Splunk
+- `crowdstrike_falcon_pipeline` which was written for data collected by the CrowdStrike Falcon Agent stored in CrowdStrike Logscale. It effectively translates rules to the CrowdStrike Query Language used by LogScale.
 
-Currently the pipeline adds support for the following event types (Sigma logsource category to event_simpleName mapping):
+## Supported Rules
+### Falcon Pipeline
+The following categories and products are supported by  the `crowdstrike_falcon_pipeline` pipeline:
+| category | product | CrowdStrike event_simpleName |
+|-|-|-|
+|`process_creation` | `windows`, `linux`| ProcessRollup2 |
+|`network_connection` | `windows`| NetworkConnectIP4, NetworkReceiveAcceptIP4 |
+|`dns_query` | `windows`| DnsRequest |
+|`image_load` | `windows`| ClassifiedModuleLoad |
+|`driver_load` | `windows`| DriverLoad |
+|`ps_script` | `windows`| CommandHistory, ScriptControlScanTelemetry |
 
-* process_creation: ProcessRollup2
-    * Only rules with references to the file name of the parent image are supported because CrowdStrike ProcessRollup2 events only contain the file name.
-* network_connection: NetworkConnectionIP4 or NetworkReceiveAcceptIP4 (depending on Initiated field value)
-    * events that refer to process image names are not supported because this information is not available in CrowdStrike network connection events, just a process id reference.
+### Falcon Data Replicator Pipeline
+The following categories and products are supported by  the `crowdstrike_fdr_pipeline` pipeline:
+| category | product | CrowdStrike event_simpleName |
+|-|-|-|
+|`process_creation` | `windows`| ProcessRollup2 |
+|`network_connection` | `windows`| NetworkConnectIP4, NetworkReceiveAcceptIP4 |
 
-Not supported because the FDR events lack information required by Sigma rules:
+There's likely more windows categories that can be supported by the pipelines; We will be adding support gradually as availability allows. 
 
-* create_remote_thread: event lack information required by most rules. No process details, only reference.
+## Limitations and caveats:
+- **Full Paths**: 
+Falcon agents do not capture drive names when logging paths. Instead, when drive letters are expected the device path is used. For example, `C:\Windows` results to `\Device\HarddiskVolume3\Windows` in the logs. To account for this, the pipeline replaces any drive letters in fields containing full path with `\Device\HarddiskVolume?\`  (where '?' can be any single character).
+
+- **Parent Name**:
+Falcon `process_creation` events do not capture the full path of the parent. Hence, in such cases the transformation is configured to fail.
+
+- **DNS Query Results**:
+Falcon `dns_query` events return the IP records of a successful query in [semicolon-separated](https://github.com/CrowdStrike/logscale-community-content/blob/main/CrowdStrike-Query-Language-Map/CrowdStrike-Query-Language/concatArray.md) string. The pipeline handles this by enforcing a "contains" expression on the `QueryResults` field
+- **Unsupported fields**:
+Falcon does not always capture the same fields as sysmon for the categories supported. In cases where the rule requires unsupported fields, the transformation fails.
+
+## References
+- [LogScale Community Content](https://github.com/CrowdStrike/logscale-community-content)
 
 This backend is currently maintained by:
 
 * [Thomas Patzke](https://github.com/thomaspatzke/)
+* [Panos Moullotos](https://github.com/moullos)
