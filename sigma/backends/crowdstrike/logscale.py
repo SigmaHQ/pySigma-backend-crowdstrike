@@ -251,15 +251,6 @@ class LogScaleBackend(TextQueryBackend):
             state, cond.field, super().convert_condition_field_eq_val_cidr(cond, state)
         ).postprocess(None, cond)
 
-    def convert_condition_as_in_expression(
-        self, cond: ConditionOR, state: ConversionState
-    ) -> LogScaleDeferredInOperator:
-        return LogScaleDeferredInOperator(
-            state,
-            cond.args[0].field,
-            super().convert_condition_as_in_expression(cond, state),
-        ).postprocess(None, cond)
-
     def convert_condition_field_eq_val_str(
         self, cond: ConditionFieldEqualsValueExpression, state: ConversionState
     ) -> Union[str, DeferredQueryExpression]:
@@ -293,12 +284,6 @@ class LogScaleBackend(TextQueryBackend):
             ):
                 expr = self.contains_expression
                 value = cond.value[1:-1]
-            elif (  # wildcard match expression: string contains wildcard
-                self.wildcard_match_expression is not None
-                and cond.value.contains_special()
-            ):
-                expr = self.wildcard_match_expression
-                value = cond.value
             else:
                 expr = self.re_exact_match
                 value = cond.value
