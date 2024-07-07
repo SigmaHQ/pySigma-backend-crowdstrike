@@ -1,5 +1,5 @@
-from .crowdstrike_fdr import crowdstrike_fdr_pipeline
-from .crowdstrike_falcon import crowdstrike_falcon_pipeline
+from .crowdstrike import crowdstrike_fdr_pipeline
+from .crowdstrike import crowdstrike_falcon_pipeline
 
 pipelines = {
     "crowdstrike_fdr": crowdstrike_fdr_pipeline,
