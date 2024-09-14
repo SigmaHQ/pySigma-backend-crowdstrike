@@ -221,6 +221,56 @@ def process_creation_sigma_rule_disk_name_colon():
         """
     )
 
+@pytest.fixture
+def process_creation_sigma_rule_disk_name_contains():
+    return SigmaCollection.from_yaml(
+        """
+        title: Process Creation Test
+        status: test
+        logsource:
+            category: process_creation
+            product: windows
+        detection:
+            sel:
+                CommandLine: "test.exe foo bar"
+                Image|contains: "C:\\\\Windows\\\\System32\\\\cmd.exe"
+            condition: sel
+        """
+    )
+
+@pytest.fixture
+def process_creation_sigma_rule_disk_name_startswith():
+    return SigmaCollection.from_yaml(
+        """
+        title: Process Creation Test
+        status: test
+        logsource:
+            category: process_creation
+            product: windows
+        detection:
+            sel:
+                CommandLine: "test.exe foo bar"
+                Image|startswith: "C:\\\\Windows\\\\System32\\\\cmd.exe"
+            condition: sel
+        """
+    )
+
+@pytest.fixture
+def process_creation_sigma_rule_disk_name_endswith():
+    return SigmaCollection.from_yaml(
+        """
+        title: Process Creation Test
+        status: test
+        logsource:
+            category: process_creation
+            product: windows
+        detection:
+            sel:
+                CommandLine: "test.exe foo bar"
+                Image|endswith: "C:\\\\Windows\\\\System32\\\\cmd.exe"
+            condition: sel
+        """
+    )
 
 @pytest.fixture
 def process_creation_sigma_rule_unsupported_field(field):
@@ -506,6 +556,29 @@ def test_crowdstrike_falcon_pipeline_replace_disk_name_colon(
         == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\Windows\\\\System32\\\\cmd\\.exe$/i"
     )
 
+def test_crowdstrike_falcon_pipeline_replace_disk_name_contains(
+    resolver: ProcessingPipelineResolver, process_creation_sigma_rule_disk_name_contains
+):
+    assert (
+        convert_falcon(process_creation_sigma_rule_disk_name_contains, resolver)
+        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe/i"
+    )
+
+def test_crowdstrike_falcon_pipeline_replace_disk_name_startswith(
+    resolver: ProcessingPipelineResolver, process_creation_sigma_rule_disk_name_startswith
+):
+    assert (
+        convert_falcon(process_creation_sigma_rule_disk_name_startswith, resolver)
+        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/^\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe/i"
+    )
+
+def test_crowdstrike_falcon_pipeline_replace_disk_name_endswith(
+    resolver: ProcessingPipelineResolver, process_creation_sigma_rule_disk_name_endswith
+):
+    assert (
+        convert_falcon(process_creation_sigma_rule_disk_name_endswith, resolver)
+        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe$/i"
+    )
 
 @pytest.mark.parametrize("field", unsupported_process_creation_fields)
 def test_crowdstrike_falcon_pipeline_unsupported_field(
