@@ -440,7 +440,7 @@ def common_processing_items():
         ProcessingItem(
             identifier="cql_imagefilename_replace_disk_name",
             transformation=ReplaceStringTransformation(
-                regex="^[C-Z]:", replacement="\\\\Device\\\\HarddiskVolume?\\\\"
+                regex="[C-Z]:", replacement="\\\\Device\\\\HarddiskVolume?\\\\"
             ),
             field_name_conditions=[
                 IncludeFieldCondition(fields=["ImageFileName"]),
@@ -448,7 +448,6 @@ def common_processing_items():
             ],
             field_name_condition_linking=any,
         ),
-        # ImageFileName starting with colon handling
         ProcessingItem(
             identifier="cql_imagefilename_replace_disk_name",
             transformation=ReplaceStringTransformation(regex=":", replacement=""),

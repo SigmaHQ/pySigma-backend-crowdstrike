@@ -256,34 +256,30 @@ class LogScaleBackend(TextQueryBackend):
     ) -> Union[str, DeferredQueryExpression]:
         """Conversion of field = string value expressions. In logscale we handle everything as regexs"""
         try:
-            if (  # Check conditions for usage of 'startswith' operator
+            if (  # contains: string starts and ends with wildcard
+                self.contains_expression is not None
+                and cond.value.startswith(SpecialChars.WILDCARD_MULTI)
+                and cond.value.endswith(SpecialChars.WILDCARD_MULTI)
+            ):
+                expr = self.contains_expression
+                value = cond.value[1:-1]
+            elif (  # Same as above but for 'endswith' operator: string starts with wildcard
+                self.endswith_expression is not None
+                and cond.value.startswith(SpecialChars.WILDCARD_MULTI)
+            ):
+                expr = self.endswith_expression
+                value = cond.value[1:]
+
+            elif (  # Same as above but for 'startswith' operator: string ends with wildcard
                 self.startswith_expression
                 is not None  # 'startswith' operator is defined in backend
                 and cond.value.endswith(
                     SpecialChars.WILDCARD_MULTI
-                )  # String ends with wildcard
-                and not cond.value[
-                    :-1
-                ].contains_special()  # Remainder of string doesn't contains special characters
+                ) 
             ):
                 expr = self.startswith_expression
                 # If all conditions are fulfilled, use 'startswith' operator instead of equal token
                 value = cond.value[:-1]
-            elif (  # Same as above but for 'endswith' operator: string starts with wildcard and doesn't contains further special characters
-                self.endswith_expression is not None
-                and cond.value.startswith(SpecialChars.WILDCARD_MULTI)
-                and not cond.value[1:].contains_special()
-            ):
-                expr = self.endswith_expression
-                value = cond.value[1:]
-            elif (  # contains: string starts and ends with wildcard
-                self.contains_expression is not None
-                and cond.value.startswith(SpecialChars.WILDCARD_MULTI)
-                and cond.value.endswith(SpecialChars.WILDCARD_MULTI)
-                and not cond.value[1:-1].contains_special()
-            ):
-                expr = self.contains_expression
-                value = cond.value[1:-1]
             else:
                 expr = self.re_exact_match
                 value = cond.value

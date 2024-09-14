@@ -48,7 +48,7 @@ def test_crowdstrikelogscale_special_chars(logscale_backend: LogScaleBackend):
         """
             )
         )
-        == ["fieldA=/^valueA.*\\$\\^\\.\\|.\\(\\)\\[\\]\\+\/$/i"]
+        == ["fieldA=/^valueA.*\\$\\^\\.\\|.\\(\\)\\[\\]\\+\\/$/i"]
     )
 
 
