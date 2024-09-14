@@ -23,6 +23,11 @@ rope = "^0.18.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"
+pytest = "^8.3.3"
+pytest-cov = "^5.0.0"
+pytest-mypy = "^0.10.3"
+pylint = "^3.2.7"
+rope = "^1.13.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
