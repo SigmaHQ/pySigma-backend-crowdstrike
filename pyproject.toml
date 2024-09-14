@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "pysigma-pipeline-crowdstrike"
-version = "1.0.3"
-description = "pySigma CrowdStrike processing pipelines"
+name = "pysigma-backend-crowdstrike"
+version = "2.0.0"
+description = "pySigma CrowdStrike Logscale backend and processing pipelines for the Falcon data model."
 readme = "README.md"
-authors = ["Thomas Patzke <thomas@patzke.org>"]
+authors = ["Panos Moullotos", "Thomas Patzke <thomas@patzke.org>"]
 license = "LGPL-2.1-only"
-repository = "https://github.com/SigmaHQ/pySigma-pipeline-crowdstrike"
+repository = "https://github.com/SigmaHQ/pySigma-backend-crowdstrike"
 packages = [
     { include = "sigma" }
 ]
