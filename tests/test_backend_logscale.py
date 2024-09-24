@@ -43,12 +43,12 @@ def test_crowdstrikelogscale_special_chars(logscale_backend: LogScaleBackend):
                 product: test_product
             detection:
                 sel:
-                    fieldA: valueA*$^.|?()[]+/
+                    fieldA: valueA*$^.|?()[]+/{}
                 condition: sel
         """
             )
         )
-        == ["fieldA=/^valueA.*\\$\\^\\.\\|.\\(\\)\\[\\]\\+\\/$/i"]
+        == ["fieldA=/^valueA.*\\$\\^\\.\\|.\\(\\)\\[\\]\\+\\/\\{\\}$/i"]
     )
 
 

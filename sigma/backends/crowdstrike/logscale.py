@@ -124,7 +124,7 @@ class LogScaleBackend(TextQueryBackend):
     escape_char_re: ClassVar[str] = "\\"
     wildcard_multi_re: ClassVar[str] = ".*"
     wildcard_single_re: ClassVar[str] = "."
-    add_escaped_re: ClassVar[str] = "*$^.|?()[]+/"
+    add_escaped_re: ClassVar[str] = "*$^.|?()[]+/{}"
     filter_chars_re: ClassVar[str] = ""
     bool_values_re: ClassVar[Dict[bool, str]] = {
         True: "true",
