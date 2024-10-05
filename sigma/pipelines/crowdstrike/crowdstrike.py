@@ -550,7 +550,6 @@ def crowdstrike_fdr_pipeline() -> ProcessingPipeline:
 def crowdstrike_falcon_pipeline() -> ProcessingPipeline:
     return ProcessingPipeline(
         name="CrowdStrike Falcon Pipeline",
-        allowed_backends={"logscale"},
         priority=10,
         items=[
             # Process Creation
