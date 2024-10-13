@@ -136,7 +136,6 @@ class LogScaleBackend(TextQueryBackend):
     # is one of the flags shortcuts supported by Sigma (currently i, m and s) and refers to the
     # token stored in the class variable re_flags.
     re_expression: ClassVar[str] = "{field}=/{regex}/{flag_i}{flag_m}{flag_s}"
-    re_exact_match: ClassVar[str] = "{field}=/^{regex}$/{flag_i}{flag_m}{flag_s}"
     re_escape_char: ClassVar[str] = "\\"
     re_escape: ClassVar[Tuple[str]] = '"'
     re_escape_escape_char: bool = False
@@ -156,9 +155,10 @@ class LogScaleBackend(TextQueryBackend):
     case_sensitive_contains_expression: ClassVar[str] = "{field}=/{value}/"
 
     # also handled as regex. Look at the convert_condition_field_eq_val_str method
-    startswith_expression: ClassVar[str] = "{field}=/^{regex}/{flag_i}{flag_m}{flag_s}"
-    endswith_expression: ClassVar[str] = "{field}=/{regex}$/{flag_i}{flag_m}{flag_s}"
-    contains_expression: ClassVar[str] = "{field}=/{regex}/{flag_i}{flag_m}{flag_s}"
+    eq_expression: ClassVar[str] = "{field}=/^{regex}$/i"
+    startswith_expression: ClassVar[str] = "{field}=/^{regex}/i"
+    endswith_expression: ClassVar[str] = "{field}=/{regex}$/i"
+    contains_expression: ClassVar[str] = "{field}=/{regex}/i"
 
     # https://library.humio.com/data-analysis/functions-cidr.html
     # Convert method is overloaded below
@@ -212,7 +212,7 @@ class LogScaleBackend(TextQueryBackend):
         "/{value}/i"  # Expression for number value not bound to a field as format string with placeholder {value}
     )
     unbound_value_re_expression: ClassVar[str] = (
-        "/{value}/{flag_i}{flag_m}{flag_s}"  # Expression for regular expression not bound to a field as format string with placeholder {value} and {flag_x} as described for re_expression
+        "/{value}/i"  # Expression for regular expression not bound to a field as format string with placeholder {value} and {flag_x} as described for re_expression
     )
 
     # Query finalization: appending and concatenating deferred query part
@@ -250,57 +250,3 @@ class LogScaleBackend(TextQueryBackend):
         return LogScaleDeferredCIDRExpression(
             state, cond.field, super().convert_condition_field_eq_val_cidr(cond, state)
         ).postprocess(None, cond)
-
-    def convert_condition_field_eq_val_str(
-        self, cond: ConditionFieldEqualsValueExpression, state: ConversionState
-    ) -> Union[str, DeferredQueryExpression]:
-        """Conversion of field = string value expressions. In logscale we handle everything as regexs"""
-        try:
-            if (  # contains: string starts and ends with wildcard
-                self.contains_expression is not None
-                and cond.value.startswith(SpecialChars.WILDCARD_MULTI)
-                and cond.value.endswith(SpecialChars.WILDCARD_MULTI)
-            ):
-                expr = self.contains_expression
-                value = cond.value[1:-1]
-            elif (  # Same as above but for 'endswith' operator: string starts with wildcard
-                self.endswith_expression is not None
-                and cond.value.startswith(SpecialChars.WILDCARD_MULTI)
-            ):
-                expr = self.endswith_expression
-                value = cond.value[1:]
-
-            elif (  # Same as above but for 'startswith' operator: string ends with wildcard
-                self.startswith_expression
-                is not None  # 'startswith' operator is defined in backend
-                and cond.value.endswith(
-                    SpecialChars.WILDCARD_MULTI
-                ) 
-            ):
-                expr = self.startswith_expression
-                # If all conditions are fulfilled, use 'startswith' operator instead of equal token
-                value = cond.value[:-1]
-            else:
-                expr = self.re_exact_match
-                value = cond.value
-            return expr.format(
-                field=self.escape_and_quote_field(cond.field),
-                regex=self.convert_value_str_re(value, state),
-                flag_i="i",
-                flag_m="",
-                flag_s="",
-            )
-        except TypeError:  # pragma: no cover
-            raise NotImplementedError(
-                "Field equals string value expressions with strings are not supported by the backend."
-            )
-
-    def convert_value_str_re(self, s: SigmaString, state: ConversionState) -> str:
-        converted = s.convert(
-            escape_char=self.escape_char_re,
-            wildcard_multi=self.wildcard_multi_re,
-            wildcard_single=self.wildcard_single_re,
-            add_escaped=self.str_quote_re + self.add_escaped_re + self.escape_char_re,
-            filter_chars=self.filter_chars_re,
-        )
-        return converted
