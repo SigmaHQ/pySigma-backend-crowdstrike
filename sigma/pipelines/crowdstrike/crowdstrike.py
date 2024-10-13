@@ -440,7 +440,7 @@ def common_processing_items():
         ProcessingItem(
             identifier="cql_imagefilename_replace_disk_name",
             transformation=ReplaceStringTransformation(
-                regex="[C-Z]:", replacement="\\\\Device\\\\HarddiskVolume?"
+                regex="[C-Z]:", replacement="\\\\Device\\\\HarddiskVolume?", skip_special=True, interpret_special=True
             ),
             field_name_conditions=[
                 IncludeFieldCondition(fields=["ImageFileName"]),
@@ -450,7 +450,7 @@ def common_processing_items():
         ),
         ProcessingItem(
             identifier="cql_imagefilename_replace_disk_name",
-            transformation=ReplaceStringTransformation(regex=":", replacement=""),
+            transformation=ReplaceStringTransformation(regex=":", replacement="", skip_special=True),
             field_name_conditions=[
                 IncludeFieldCondition(fields=["ImageFileName"]),
                 IncludeFieldCondition(fields=["TargetImageFileName"]),
