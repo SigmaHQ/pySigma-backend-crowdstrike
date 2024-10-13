@@ -504,6 +504,22 @@ def test_crowdstrike_falcon_image_with_placeholder(resolver : ProcessingPipeline
     backend = LogScaleBackend(pipeline)
     assert backend.convert(sigma_rule) == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i ImageFileName=/^foo\\.exe$/i or ImageFileName=/^bar\\.exe$/i or ImageFileName=/^test\\.exe$/i"
 
+def test_crowdstrike_falcon_image_contains_with_trailing_backslash(resolver : ProcessingPipelineResolver):
+    sigma_rule = SigmaCollection.from_yaml("""
+        title: Image with Placeholder Test
+        status: test
+        logsource:
+            category: process_creation
+            product: windows
+        detection:
+            sel:
+                Image|contains: ":\\\\Windows\\\\System32\\\\"
+            condition: sel
+    """)
+    pipeline = resolver.resolve_pipeline("crowdstrike_falcon")
+    backend = LogScaleBackend(pipeline)
+    assert "ImageFileName=/\\\\Windows\\\\System32\\\\/i" in backend.convert(sigma_rule)
+
 
 def test_crowdstrike_falcon_pipeline_parentimage(
     resolver: ProcessingPipelineResolver, process_creation_sigma_rule_parentimage
