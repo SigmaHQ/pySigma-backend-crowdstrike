@@ -151,14 +151,20 @@ class LogScaleBackend(TextQueryBackend):
 
     # wildcards could have been used here as well but we went with the regex format without the case insensitivity flag
     case_sensitive_startswith_expression: ClassVar[str] = "{field}=/^{value}/"
+    case_sensitive_startswith_expression_allow_special: ClassVar[bool] = True
     case_sensitive_endswith_expression: ClassVar[str] = "{field}=/{value}$/"
+    case_sensitive_endswith_expression_allow_special: ClassVar[bool] = True
     case_sensitive_contains_expression: ClassVar[str] = "{field}=/{value}/"
+    case_sensitive_contains_expression_allow_special: ClassVar[bool] = True
 
     # also handled as regex. Look at the convert_condition_field_eq_val_str method
     eq_expression: ClassVar[str] = "{field}=/^{regex}$/i"
     startswith_expression: ClassVar[str] = "{field}=/^{regex}/i"
+    startswith_expression_allow_special: ClassVar[bool] = True
     endswith_expression: ClassVar[str] = "{field}=/{regex}$/i"
+    endswith_expression_allow_special: ClassVar[bool] = True
     contains_expression: ClassVar[str] = "{field}=/{regex}/i"
+    contains_expression_allow_special: ClassVar[bool] = True
 
     # https://library.humio.com/data-analysis/functions-cidr.html
     # Convert method is overloaded below
