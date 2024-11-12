@@ -116,6 +116,12 @@ def common_processing_items():
                     "sha256": "SHA256HashData",
                     "Computer": "ComputerName",
                     "OriginalFileName": "OriginalFilename",
+                    "CommandLine": "CommandLine", #CB Lab added CommandLine @author Jason Slaughter jslaughter@mitre.org
+                    "ProcessID": "TargetProcessID",  #CB Lab added ProcessID @author Kaitlyn Laohoo klaohoo@mitre.org
+                    "md5": "MD5HashData", #CB Lab added md5 @author Kaitlyn Laohoo klaohoo@mitre.org
+                    "sha1": "SHA1HashData", #CB Lab added sha1 @author Kaitlyn Laohoo klaohoo@mitre.org
+                    "sha256": "SHA256HashData", #CB Lab added sha256 ProcessID @author Kaitlyn Laohoo klaohoo@mitre.org
+                    "UtcTime": "ProcessStartTime", #CB Lab added UtcTime @author John Dombrowski jdombrowski@mitre.org
                 }
             ),
             rule_conditions=[
