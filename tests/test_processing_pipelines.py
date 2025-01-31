@@ -2,8 +2,6 @@ from sigma.collection import SigmaCollection
 from sigma.exceptions import SigmaTransformationError
 from sigma.backends.test import TextQueryTestBackend
 from sigma.processing.resolver import ProcessingPipelineResolver
-from sigma.processing.pipeline import ProcessingPipeline, ProcessingItem
-from sigma.processing.transformations import ValueListPlaceholderTransformation
 from sigma.pipelines.crowdstrike import (
     crowdstrike_fdr_pipeline,
     crowdstrike_falcon_pipeline,
@@ -482,43 +480,6 @@ def test_crowdstrike_falcon_pipeline_process_creation(
         convert_falcon(process_creation_sigma_rule, resolver)
         == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\test\\.exe$/i"
     )
-
-def test_crowdstrike_falcon_image_with_placeholder(resolver : ProcessingPipelineResolver):
-    sigma_rule = SigmaCollection.from_yaml("""
-        title: Image with Placeholder Test
-        status: test
-        logsource:
-            category: process_creation
-            product: windows
-        detection:
-            sel:
-                Image|expand: "%var%"
-            condition: sel
-    """)
-    pipeline = resolver.resolve_pipeline("crowdstrike_falcon") + ProcessingPipeline(
-        items=[
-            ProcessingItem(transformation=ValueListPlaceholderTransformation())
-        ],
-        vars={"var": ["foo.exe", "bar.exe", "test.exe"]},
-    )
-    backend = LogScaleBackend(pipeline)
-    assert backend.convert(sigma_rule) == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i ImageFileName=/^foo\\.exe$/i or ImageFileName=/^bar\\.exe$/i or ImageFileName=/^test\\.exe$/i"
-
-def test_crowdstrike_falcon_image_contains_with_trailing_backslash(resolver : ProcessingPipelineResolver):
-    sigma_rule = SigmaCollection.from_yaml("""
-        title: Image with Placeholder Test
-        status: test
-        logsource:
-            category: process_creation
-            product: windows
-        detection:
-            sel:
-                Image|contains: ":\\\\Windows\\\\System32\\\\"
-            condition: sel
-    """)
-    pipeline = resolver.resolve_pipeline("crowdstrike_falcon")
-    backend = LogScaleBackend(pipeline)
-    assert "ImageFileName=/\\\\Windows\\\\System32\\\\/i" in backend.convert(sigma_rule)
 
 
 def test_crowdstrike_falcon_pipeline_parentimage(

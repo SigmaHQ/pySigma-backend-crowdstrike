@@ -116,12 +116,6 @@ def common_processing_items():
                     "sha256": "SHA256HashData",
                     "Computer": "ComputerName",
                     "OriginalFileName": "OriginalFilename",
-                    "CommandLine": "CommandLine", #CB Lab added CommandLine @author Jason Slaughter jslaughter@mitre.org
-                    "ProcessID": "TargetProcessID",  #CB Lab added ProcessID @author Kaitlyn Laohoo klaohoo@mitre.org
-                    "md5": "MD5HashData", #CB Lab added md5 @author Kaitlyn Laohoo klaohoo@mitre.org
-                    "sha1": "SHA1HashData", #CB Lab added sha1 @author Kaitlyn Laohoo klaohoo@mitre.org
-                    "sha256": "SHA256HashData", #CB Lab added sha256 ProcessID @author Kaitlyn Laohoo klaohoo@mitre.org
-                    "UtcTime": "ProcessStartTime", #CB Lab added UtcTime @author John Dombrowski jdombrowski@mitre.org
                 }
             ),
             rule_conditions=[
@@ -446,7 +440,7 @@ def common_processing_items():
         ProcessingItem(
             identifier="cql_imagefilename_replace_disk_name",
             transformation=ReplaceStringTransformation(
-                regex="[C-Z]:", replacement="\\\\Device\\\\HarddiskVolume?", skip_special=True, interpret_special=True
+                regex="[C-Z]:", replacement="\\\\Device\\\\HarddiskVolume?"
             ),
             field_name_conditions=[
                 IncludeFieldCondition(fields=["ImageFileName"]),
@@ -456,7 +450,7 @@ def common_processing_items():
         ),
         ProcessingItem(
             identifier="cql_imagefilename_replace_disk_name",
-            transformation=ReplaceStringTransformation(regex=":", replacement="", skip_special=True),
+            transformation=ReplaceStringTransformation(regex=":", replacement=""),
             field_name_conditions=[
                 IncludeFieldCondition(fields=["ImageFileName"]),
                 IncludeFieldCondition(fields=["TargetImageFileName"]),
@@ -556,6 +550,7 @@ def crowdstrike_fdr_pipeline() -> ProcessingPipeline:
 def crowdstrike_falcon_pipeline() -> ProcessingPipeline:
     return ProcessingPipeline(
         name="CrowdStrike Falcon Pipeline",
+        allowed_backends={"logscale"},
         priority=10,
         items=[
             # Process Creation
