@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysigma-backend-crowdstrike"
-version = "2.0.1"
+version = "2.1.0rc1"
 description = "pySigma CrowdStrike Logscale backend and processing pipelines for the Falcon data model."
 readme = "README.md"
 authors = ["Panos Moullotos", "Thomas Patzke <thomas@patzke.org>"]
