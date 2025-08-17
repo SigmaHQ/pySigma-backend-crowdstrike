@@ -26,8 +26,12 @@ from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
 from sigma.processing.finalization import ConcatenateQueriesFinalizer
 
 
-cond_field_parentbasefilename = IncludeFieldCondition(fields=["ParentBaseFileName"])
-cond_field_contextbasefilename = IncludeFieldCondition(fields=["ContextBaseFileName"])
+def cond_field_parentbasefilename():
+    return IncludeFieldCondition(fields=["ParentBaseFileName"])
+
+
+def cond_field_contextbasefilename():
+    return IncludeFieldCondition(fields=["ContextBaseFileName"])
 
 
 def generate_unsupported_process_field_processing_item(field):
@@ -155,7 +159,7 @@ def common_processing_items():
                 "Only file name of parent image is available in CrowdStrike Query Language events."
             ),
             field_name_conditions=[
-                cond_field_parentbasefilename,
+                cond_field_parentbasefilename(),
             ],
             detection_item_conditions=[
                 MatchStringCondition(
@@ -172,7 +176,7 @@ def common_processing_items():
                 replacement="\\1",
             ),
             field_name_conditions=[
-                cond_field_parentbasefilename,
+                cond_field_parentbasefilename(),
             ],
         ),
         # IntegrityLevel handling
@@ -416,7 +420,7 @@ def common_processing_items():
                 "Only file name of image is available in CrowdStrike Query Language events."
             ),
             field_name_conditions=[
-                cond_field_contextbasefilename,
+                cond_field_contextbasefilename(),
             ],
             detection_item_conditions=[
                 MatchStringCondition(
@@ -433,7 +437,7 @@ def common_processing_items():
                 replacement="\\1",
             ),
             field_name_conditions=[
-                cond_field_contextbasefilename,
+                cond_field_contextbasefilename(),
             ],
         ),
         # ImageFileName full path handling
