@@ -111,7 +111,7 @@ def common_processing_items():
             ],
         ),
         ProcessingItem(
-            identifier="cql_mac",
+            identifier="cql_process_creation_mac",
             transformation=AddConditionTransformation({"event_platform": "Mac"}),
             rule_conditions=[
                 logsource_macos_process_creation(),
