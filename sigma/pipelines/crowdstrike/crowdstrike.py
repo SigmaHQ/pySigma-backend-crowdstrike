@@ -7,6 +7,7 @@ from sigma.pipelines.common import (
     logsource_linux_process_creation,
     logsource_windows_network_connection,
     logsource_windows_network_connection_initiated,
+    logsource_macos_process_creation,
 )
 from sigma.processing.transformations import (
     ReplaceStringTransformation,
@@ -110,6 +111,13 @@ def common_processing_items():
             ],
         ),
         ProcessingItem(
+            identifier="cql_process_creation_mac",
+            transformation=AddConditionTransformation({"event_platform": "Mac"}),
+            rule_conditions=[
+                logsource_macos_process_creation(),
+            ],
+        ),
+        ProcessingItem(
             identifier="cql_process_creation_fieldmaping",
             transformation=FieldMappingTransformation(
                 {
@@ -125,6 +133,7 @@ def common_processing_items():
             rule_conditions=[
                 logsource_windows_process_creation(),
                 logsource_linux_process_creation(),
+                logsource_macos_process_creation(),
             ],
             rule_condition_linking=any,
         ),
@@ -565,6 +574,7 @@ def crowdstrike_falcon_pipeline() -> ProcessingPipeline:
                 rule_conditions=[
                     logsource_windows_process_creation(),
                     logsource_linux_process_creation(),
+                    logsource_macos_process_creation(),
                 ],
                 rule_condition_linking=any,
             ),
