@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysigma-backend-crowdstrike"
-version = "2.1.0rc1"
+version = "3.0.0"
 description = "pySigma CrowdStrike Logscale backend and processing pipelines for the Falcon data model."
 readme = "README.md"
 authors = ["Panos Moullotos", "Thomas Patzke <thomas@patzke.org>"]
@@ -11,15 +11,15 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
-pysigma = "1.0.0rc1"
+python = "^3.10"
+pysigma = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
-black = "^24.4.2"
-pytest = "^8.3.3"
-pytest-cov = "^5.0.0"
+black = "^24.10.0"
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
 pytest-mypy = "^0.10.3"
-pylint = "^3.2.7"
+pylint = "^3.3.2"
 rope = "^1.13.0"
 
 [build-system]
