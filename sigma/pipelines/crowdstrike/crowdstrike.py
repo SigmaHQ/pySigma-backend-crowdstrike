@@ -8,6 +8,11 @@ from sigma.pipelines.common import (
     logsource_windows_network_connection,
     logsource_windows_network_connection_initiated,
     logsource_macos_process_creation,
+    logsource_windows_file_event,
+    logsource_windows_registry_event,
+    logsource_windows_registry_add,
+    logsource_windows_registry_set,
+    logsource_windows_registry_delete,
 )
 from sigma.processing.transformations import (
     ReplaceStringTransformation,
@@ -89,6 +94,35 @@ def generate_unsupported_driverload_field_processing_item(field):
         field_name_conditions=[IncludeFieldCondition(fields=[field])],
     )
 
+
+def generate_unsupported_file_event_field_processing_item(field):
+    return ProcessingItem(
+        identifier=f"cql_fail_file_event_{field}",
+        transformation=DetectionItemFailureTransformation(
+            f"CrowdStrike Query Language does not support the {field} field"
+        ),
+        rule_conditions=[logsource_windows_file_event()],
+        field_name_conditions=[IncludeFieldCondition(fields=[field])],
+    )
+
+
+def generate_unsupported_registry_event_field_processing_item(field):
+    return ProcessingItem(
+        identifier=f"cql_fail_registry_event_{field}",
+        transformation=DetectionItemFailureTransformation(
+            f"CrowdStrike Query Language does not support the {field} field"
+        ),
+        rule_conditions=[
+            logsource_windows_registry_event(),
+            logsource_windows_registry_add(),
+            logsource_windows_registry_set(),
+            logsource_windows_registry_delete(),
+        ],
+        rule_condition_linking=any,
+        field_name_conditions=[IncludeFieldCondition(fields=[field])],
+    )
+
+
 def common_processing_items():
     return [
        ProcessingItem(
@@ -100,6 +134,11 @@ def common_processing_items():
             logsource_windows_driver_load(),
             logsource_windows_image_load(),
             logsource_windows_ps_script(),
+            logsource_windows_file_event(),
+            logsource_windows_registry_event(),
+            logsource_windows_registry_add(),
+            logsource_windows_registry_set(),
+            logsource_windows_registry_delete(),
         ],
         rule_condition_linking=any,
         ),
@@ -410,6 +449,81 @@ def common_processing_items():
         generate_unsupported_driverload_field_processing_item("Hashes"),
         generate_unsupported_driverload_field_processing_item("Imphash"),
         generate_unsupported_driverload_field_processing_item("Image"),
+        # File Event Common Processing Items
+        ProcessingItem(
+            identifier="cql_file_event_fieldmapping",
+            transformation=FieldMappingTransformation(
+                {
+                    "TargetFilename": "TargetFileName",
+                    "Image": "ContextBaseFileName",
+                    "User": "UserName",
+                    "ProcessId": "RawProcessId",
+                    "Computer": "ComputerName",
+                    "sha256": "SHA256HashData",
+                    "md5": "MD5HashData",
+                }
+            ),
+            rule_conditions=[
+                logsource_windows_file_event(),
+            ],
+        ),
+        ProcessingItem(
+            identifier="crowdstrike_file_event_logsource",
+            transformation=ChangeLogsourceTransformation(
+                category="file_event",
+                product="windows",
+                service="crowdstrike",
+            ),
+            rule_conditions=[
+                logsource_windows_file_event(),
+            ],
+        ),
+        # Handle unsupported file event fields
+        generate_unsupported_file_event_field_processing_item("Hashes"),
+        generate_unsupported_file_event_field_processing_item("Imphash"),
+        generate_unsupported_file_event_field_processing_item("sha1"),
+        generate_unsupported_file_event_field_processing_item("CommandLine"),
+        generate_unsupported_file_event_field_processing_item("ParentImage"),
+        # Registry Event Common Processing Items
+        ProcessingItem(
+            identifier="cql_registry_event_fieldmapping",
+            transformation=FieldMappingTransformation(
+                {
+                    "TargetObject": "RegObjectName",
+                    "Details": ["RegStringValue", "RegNumericValue", "RegBinaryValue"],
+                    "Image": "ContextBaseFileName",
+                    "User": "UserName",
+                    "ProcessId": "RawProcessId",
+                    "Computer": "ComputerName",
+                }
+            ),
+            rule_conditions=[
+                logsource_windows_registry_event(),
+                logsource_windows_registry_add(),
+                logsource_windows_registry_set(),
+                logsource_windows_registry_delete(),
+            ],
+            rule_condition_linking=any,
+        ),
+        ProcessingItem(
+            identifier="crowdstrike_registry_event_logsource",
+            transformation=ChangeLogsourceTransformation(
+                category="registry_event",
+                product="windows",
+                service="crowdstrike",
+            ),
+            rule_conditions=[
+                logsource_windows_registry_event(),
+                logsource_windows_registry_add(),
+                logsource_windows_registry_set(),
+                logsource_windows_registry_delete(),
+            ],
+            rule_condition_linking=any,
+        ),
+        # Handle unsupported registry event fields
+        generate_unsupported_registry_event_field_processing_item("EventType"),
+        generate_unsupported_registry_event_field_processing_item("NewName"),
+        generate_unsupported_registry_event_field_processing_item("Hashes"),
         # PowerShell Scripts Common Processing Items
         ProcessingItem(
             identifier="cql_powershell_script_fieldmapping",
@@ -458,6 +572,7 @@ def common_processing_items():
             field_name_conditions=[
                 IncludeFieldCondition(fields=["ImageFileName"]),
                 IncludeFieldCondition(fields=["TargetImageFileName"]),
+                IncludeFieldCondition(fields=["TargetFileName"]),
             ],
             field_name_condition_linking=any,
         ),
@@ -467,6 +582,7 @@ def common_processing_items():
             field_name_conditions=[
                 IncludeFieldCondition(fields=["ImageFileName"]),
                 IncludeFieldCondition(fields=["TargetImageFileName"]),
+                IncludeFieldCondition(fields=["TargetFileName"]),
             ],
             field_name_condition_linking=any,
         ),
@@ -557,6 +673,68 @@ def crowdstrike_fdr_pipeline() -> ProcessingPipeline:
                     logsource_windows_ps_script(),
                 ],
             ),
+            # File Event
+            ProcessingItem(
+                identifier="cql_file_event_eventtype",
+                transformation=AddConditionTransformation(
+                    {
+                        "event_simpleName": [
+                            "PEFileWritten",
+                            "NewExecutableWritten",
+                            "NewExecutableRenamed",
+                            "PNGFileWritten",
+                            "OleFileWritten",
+                            "RtfFileWritten",
+                            "LnkFileWritten",
+                            "ScriptFileWritten",
+                            "PdfFileWritten",
+                            "MsiFileWritten",
+                            "IsoFileWritten",
+                            "JavaScriptFileWritten",
+                            "HtmlFileWritten",
+                            "JarFileWritten",
+                            "OfficeFileWritten",
+                            "SettingsContentFileWritten",
+                            "MachOFileWritten",
+                            "ZipFileWritten",
+                        ]
+                    }
+                ),
+                rule_conditions=[
+                    logsource_windows_file_event(),
+                ],
+            ),
+            # Registry Event
+            ProcessingItem(
+                identifier="cql_registry_event_eventtype",
+                transformation=AddConditionTransformation(
+                    {
+                        "event_simpleName": [
+                            "RegistryOperationDetectInfo",
+                            "AsepValueUpdate",
+                            "AsepKeyUpdate",
+                            "RegSystemConfigValueUpdate",
+                            "RegBinaryValueUpdate",
+                            "RegStringValueUpdate",
+                            "RegMultiStringValueUpdate",
+                            "RegDwordValueUpdate",
+                            "RegQwordValueUpdate",
+                            "RegLinkValueUpdate",
+                            "RegGenericValueUpdate",
+                            "RegKeyCreated",
+                            "RegKeyDeleted",
+                            "RegValueDeleted",
+                        ]
+                    }
+                ),
+                rule_conditions=[
+                    logsource_windows_registry_event(),
+                    logsource_windows_registry_add(),
+                    logsource_windows_registry_set(),
+                    logsource_windows_registry_delete(),
+                ],
+                rule_condition_linking=any,
+            ),
         ] + common_processing_items(),
     )
 
@@ -642,7 +820,69 @@ def crowdstrike_falcon_pipeline() -> ProcessingPipeline:
                 rule_conditions=[
                     logsource_windows_ps_script(),
                 ],
-            ), 
+            ),
+            # File Event
+            ProcessingItem(
+                identifier="cql_file_event_eventtype",
+                transformation=AddConditionTransformation(
+                    {
+                        "#event_simpleName": [
+                            "PEFileWritten",
+                            "NewExecutableWritten",
+                            "NewExecutableRenamed",
+                            "PNGFileWritten",
+                            "OleFileWritten",
+                            "RtfFileWritten",
+                            "LnkFileWritten",
+                            "ScriptFileWritten",
+                            "PdfFileWritten",
+                            "MsiFileWritten",
+                            "IsoFileWritten",
+                            "JavaScriptFileWritten",
+                            "HtmlFileWritten",
+                            "JarFileWritten",
+                            "OfficeFileWritten",
+                            "SettingsContentFileWritten",
+                            "MachOFileWritten",
+                            "ZipFileWritten",
+                        ]
+                    }
+                ),
+                rule_conditions=[
+                    logsource_windows_file_event(),
+                ],
+            ),
+            # Registry Event
+            ProcessingItem(
+                identifier="cql_registry_event_eventtype",
+                transformation=AddConditionTransformation(
+                    {
+                        "#event_simpleName": [
+                            "RegistryOperationDetectInfo",
+                            "AsepValueUpdate",
+                            "AsepKeyUpdate",
+                            "RegSystemConfigValueUpdate",
+                            "RegBinaryValueUpdate",
+                            "RegStringValueUpdate",
+                            "RegMultiStringValueUpdate",
+                            "RegDwordValueUpdate",
+                            "RegQwordValueUpdate",
+                            "RegLinkValueUpdate",
+                            "RegGenericValueUpdate",
+                            "RegKeyCreated",
+                            "RegKeyDeleted",
+                            "RegValueDeleted",
+                        ]
+                    }
+                ),
+                rule_conditions=[
+                    logsource_windows_registry_event(),
+                    logsource_windows_registry_add(),
+                    logsource_windows_registry_set(),
+                    logsource_windows_registry_delete(),
+                ],
+                rule_condition_linking=any,
+            ),
         ] + common_processing_items(),
         finalizers=[ConcatenateQueriesFinalizer()],
     )
