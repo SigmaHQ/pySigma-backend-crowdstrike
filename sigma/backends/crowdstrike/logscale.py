@@ -18,6 +18,12 @@ from sigma.types import (
     SigmaString,
 )
 from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+from sigma.correlations import (
+    SigmaCorrelationRule,
+    SigmaCorrelationType,
+    SigmaCorrelationTypeLiteral,
+    SigmaCorrelationCondition,
+)
 import sigma
 import re
 from typing import ClassVar, Dict, Tuple, Pattern, Optional, Union
@@ -226,6 +232,144 @@ class LogScaleBackend(TextQueryBackend):
         ""  # String used as query if final query only contains deferred expression
     )
 
+    # Correlation rule support
+    # CrowdStrike LogScale (Humio) natively provides the aggregation and event
+    # typing primitives required by Sigma correlation rules:
+    #   * event_count / value_count      -> bucket() with count() / count(distinct=true)
+    #   * value_sum / value_avg          -> bucket() with sum() / avg()
+    #   * value_percentile / value_median-> bucket() with percentile() (+ rename)
+    #   * temporal                       -> case{} event typing + distinct event_type count
+    #   * temporal (boolean condition)   -> collect() the fired rules + array:contains() tests
+    # bucket() divides the search interval into fixed windows (span) and groups by
+    # the fields passed to its field= parameter, mirroring Splunk's
+    # "bin _time span=... | stats ... by _time <fields>". The aggregated rows are
+    # then filtered on the computed metric with test().
+    # temporal_ordered is not supported (LogScale has no template-friendly ordered
+    # sequence primitive) and raises NotImplementedError.
+    # https://library.humio.com/data-analysis/functions-bucket.html
+    # The backend exposes a single correlation method named "default".
+    correlation_methods: ClassVar[Dict[str, str]] = {
+        "default": "CrowdStrike LogScale correlation using bucket() aggregation",
+    }
+    default_correlation_method: ClassVar[str] = "default"
+
+    # Query frame shared by all supported correlation types. The search phase emits
+    # the matching expression (a single rule query or a case{} typing block for
+    # multi-rule temporal correlations), followed by the time-bucketed aggregation
+    # and the final threshold filter.
+    default_correlation_query: ClassVar[Dict[str, str]] = {
+        "default": "{search}\n{aggregate}\n{condition}",
+    }
+
+    # Search phase
+    # Single referenced rule (event_count/value_count): emit its query verbatim.
+    # Optional because convert_correlation_search temporarily unsets it to force
+    # the multi-rule typing path for single-rule temporal correlations.
+    correlation_search_single_rule_expression: ClassVar[Optional[str]] = "{query}"
+    # Multiple referenced rules (temporal): wrap each rule query in a case{} clause
+    # that tags matching events with their originating rule via the event_type
+    # field. LogScale drops events matching none of the clauses (no wildcard clause
+    # is emitted), which bounds the correlation to the referenced rules.
+    # https://library.humio.com/data-analysis/syntax-conditional.html
+    correlation_search_multi_rule_expression: ClassVar[str] = "case {{\n{queries}\n}}"
+    correlation_search_multi_rule_query_expression: ClassVar[str] = (
+        '{query} | event_type := "{ruleid}"{normalization}'
+    )
+    correlation_search_multi_rule_query_expression_joiner: ClassVar[str] = ";\n"
+
+    # Field normalisation (aliases): rename each referenced field to the shared
+    # alias field so that group-by works across rules with differing field names.
+    correlation_search_field_normalization_expression: ClassVar[str] = (
+        " | {alias} := {field}"
+    )
+    correlation_search_field_normalization_expression_joiner: ClassVar[str] = ""
+
+    # Aggregation phase: bucket() windows the search interval by {timespan} and
+    # aggregates per group. Sigma's group-by fields are passed to bucket()'s
+    # field= array parameter (see groupby_* templates below). limit=max raises
+    # bucket()'s default series cap (10) to the maximum so group-by correlations
+    # are not silently truncated to the ten highest-count groups.
+    event_count_aggregation_expression: ClassVar[Dict[str, str]] = {
+        "default": "| bucket(span={timespan}, limit=max{groupby}, function=count(as=event_count))",
+    }
+    value_count_aggregation_expression: ClassVar[Dict[str, str]] = {
+        "default": "| bucket(span={timespan}, limit=max{groupby}, function=count(field={field}, distinct=true, as=value_count))",
+    }
+    temporal_aggregation_expression: ClassVar[Dict[str, str]] = {
+        "default": "| bucket(span={timespan}, limit=max{groupby}, function=count(field=event_type, distinct=true, as=event_type_count))",
+    }
+    # Metric aggregations over a numeric {field}.
+    value_sum_aggregation_expression: ClassVar[Dict[str, str]] = {
+        "default": "| bucket(span={timespan}, limit=max{groupby}, function=sum({field}, as=value_sum))",
+    }
+    value_avg_aggregation_expression: ClassVar[Dict[str, str]] = {
+        "default": "| bucket(span={timespan}, limit=max{groupby}, function=avg({field}, as=value_avg))",
+    }
+    # percentile()/median() name their output field with a numeric suffix
+    # (e.g. value_percentile_95), so the result is renamed to a fixed field the
+    # condition phase can reference without knowing the percentile.
+    value_percentile_aggregation_expression: ClassVar[Dict[str, str]] = {
+        "default": "| bucket(span={timespan}, limit=max{groupby}, function=percentile({field}, percentiles=[{percentile}], as=value_percentile))\n| rename(value_percentile_{percentile}, as=value_percentile)",
+    }
+    value_median_aggregation_expression: ClassVar[Dict[str, str]] = {
+        "default": "| bucket(span={timespan}, limit=max{groupby}, function=percentile({field}, percentiles=[50], as=value_median))\n| rename(value_median_50, as=value_median)",
+    }
+    # Extended (boolean) temporal correlation: collect the distinct set of rules
+    # that fired per group into an array, then filter with the boolean condition.
+    # collect() yields a newline-joined string, so it is split back into an
+    # indexable array that array:contains() can test in the condition phase.
+    temporal_extended_aggregation_expression: ClassVar[Dict[str, str]] = {
+        "default": '| bucket(span={timespan}, limit=max{groupby}, function=collect([event_type], as=event_types))\n| splitString(field=event_types, by="\\n", as=matched)',
+    }
+
+    # Sigma timespan units map onto LogScale relative-time abbreviations directly
+    # for s/m/h/d/w/y; only the Sigma month unit ("M") needs translation, as
+    # LogScale spells months "mon" and reads "m" as minutes.
+    timespan_mapping: ClassVar[Dict[str, str]] = {"M": "mon"}
+
+    # Group-by rendered as bucket()'s field= array parameter. When the correlation
+    # rule omits group-by, no field= parameter is emitted (bucket by time only).
+    groupby_expression: ClassVar[Dict[str, str]] = {"default": ", field=[{fields}]"}
+    groupby_field_expression: ClassVar[Dict[str, str]] = {"default": "{field}"}
+    groupby_field_expression_joiner: ClassVar[Dict[str, str]] = {"default": ", "}
+    groupby_expression_nofield: ClassVar[Dict[str, str]] = {"default": ""}
+
+    # Condition phase: filter aggregated rows on the computed metric. The default
+    # correlation_condition_mapping (<, <=, >, >=, ==, !=) is inherited unchanged;
+    # all operators are valid inside test().
+    event_count_condition_expression: ClassVar[Dict[str, str]] = {
+        "default": "| test(event_count {op} {count})",
+    }
+    value_count_condition_expression: ClassVar[Dict[str, str]] = {
+        "default": "| test(value_count {op} {count})",
+    }
+    temporal_condition_expression: ClassVar[Dict[str, str]] = {
+        "default": "| test(event_type_count {op} {count})",
+    }
+    value_sum_condition_expression: ClassVar[Dict[str, str]] = {
+        "default": "| test(value_sum {op} {count})",
+    }
+    value_avg_condition_expression: ClassVar[Dict[str, str]] = {
+        "default": "| test(value_avg {op} {count})",
+    }
+    value_percentile_condition_expression: ClassVar[Dict[str, str]] = {
+        "default": "| test(value_percentile {op} {count})",
+    }
+    value_median_condition_expression: ClassVar[Dict[str, str]] = {
+        "default": "| test(value_median {op} {count})",
+    }
+    # Extended temporal condition: the parsed boolean expression, with each rule
+    # reference rendered as an array membership test. and/or/not are combined
+    # using the backend's boolean tokens (space / or / not).
+    temporal_extended_condition_expression: ClassVar[Dict[str, str]] = {
+        "default": "| {extended_condition}",
+    }
+    extended_correlation_condition_rule_reference_expression: ClassVar[
+        Dict[str, str]
+    ] = {
+        "default": 'array:contains(array="matched[]", value="{ruleid}")',
+    }
+
     def __init__(
         self,
         processing_pipeline: Optional[
@@ -235,6 +379,85 @@ class LogScaleBackend(TextQueryBackend):
         **kwargs,
     ):
         super().__init__(processing_pipeline, collect_errors, **kwargs)
+
+    def convert_correlation_search(self, rule: SigmaCorrelationRule, **kwargs) -> str:
+        """Embed the referenced rule query in a correlation search.
+
+        Two adjustments are made on top of the base implementation:
+
+        * Temporal correlations must tag every matched event with its
+          originating rule via the multi-rule ``case{}`` typing. The base
+          single-rule search expression omits that tag, so a temporal rule that
+          happens to reference a single rule would produce a query that never
+          matches. Force the multi-rule path for temporal correlations (it
+          renders a correct one-clause ``case{}`` when only one rule is
+          referenced).
+        * A referenced rule whose query consists solely of deferred parts (e.g.
+          a rule matching only on ``fieldX|cidr``) is emitted with a leading
+          ``deferred_start`` pipe. That leading pipe is spurious once the query
+          is placed at the start of a correlation query, so it is stripped.
+        """
+        if rule.type == SigmaCorrelationType.TEMPORAL:
+            # Instance attribute temporarily shadows the class variable to force
+            # the base multi-rule (case{} typing) search path.
+            single_rule_expression = self.correlation_search_single_rule_expression
+            self.correlation_search_single_rule_expression = None  # type: ignore[misc]
+            try:
+                search = super().convert_correlation_search(rule, **kwargs)
+            finally:
+                self.correlation_search_single_rule_expression = (  # type: ignore[misc]
+                    single_rule_expression
+                )
+        else:
+            search = super().convert_correlation_search(rule, **kwargs)
+        return search.removeprefix(self.deferred_start)
+
+    def convert_correlation_search_multi_rule_query_postprocess(
+        self, query: str
+    ) -> str:
+        """Strip the leading deferred pipe from a temporal case clause query.
+
+        Without this, a fully-deferred referenced rule would produce a case
+        clause starting with a bare ``| ...`` which is not valid LogScale.
+        """
+        return query.removeprefix(self.deferred_start)
+
+    def convert_correlation_aggregation_from_template(
+        self,
+        rule: SigmaCorrelationRule,
+        correlation_type: SigmaCorrelationTypeLiteral,
+        method: str,
+        search: str,
+    ) -> str:
+        """Escape/quote the value_* condition field like group-by fields.
+
+        The framework passes the condition field reference through verbatim,
+        whereas group-by fields are escaped and quoted. This normalises the two
+        so a condition field containing whitespace or special characters (e.g.
+        ``field: "user name"``) produces valid LogScale. A list of fields is
+        rejected, since a scalar aggregation over multiple fields is undefined.
+        """
+        condition = rule.condition
+        if (
+            not isinstance(condition, SigmaCorrelationCondition)
+            or condition.fieldref is None
+        ):
+            return super().convert_correlation_aggregation_from_template(
+                rule, correlation_type, method, search
+            )
+        if not isinstance(condition.fieldref, str):
+            raise SigmaFeatureNotSupportedByBackendError(
+                "Correlation condition field must be a single field name",
+                source=rule.source,
+            )
+        original_fieldref = condition.fieldref
+        condition.fieldref = self.escape_and_quote_field(original_fieldref)
+        try:
+            return super().convert_correlation_aggregation_from_template(
+                rule, correlation_type, method, search
+            )
+        finally:
+            condition.fieldref = original_fieldref
 
     def convert_condition_field_eq_val_cidr(
         self,
@@ -275,7 +498,7 @@ class LogScaleBackend(TextQueryBackend):
                 is not None  # 'startswith' operator is defined in backend
                 and cond.value.endswith(
                     SpecialChars.WILDCARD_MULTI
-                ) 
+                )
             ):
                 expr = self.startswith_expression
                 # If all conditions are fulfilled, use 'startswith' operator instead of equal token
