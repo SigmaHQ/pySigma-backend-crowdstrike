@@ -123,6 +123,35 @@ def test_crowdstrikelogscale_or_expression(logscale_backend: LogScaleBackend):
     )
 
 
+def test_crowdstrikelogscale_or_nested_in_and_expression(
+    logscale_backend: LogScaleBackend,
+):
+    """An OR nested inside an AND must be parenthesized: implicit AND (juxtaposition)
+    binds tighter than 'or' in LogScale query language, so an ungrouped OR would
+    silently widen the query."""
+    assert (
+        logscale_backend.convert(
+            SigmaCollection.from_yaml(
+                """
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                selection_img:
+                    - fieldA: valueA1
+                    - fieldA: valueA2
+                selection_cli:
+                    fieldB: valueB
+                condition: selection_img and selection_cli
+        """
+            )
+        )
+        == ["(fieldA=/^valueA1$/i or fieldA=/^valueA2$/i) fieldB=/^valueB$/i"]
+    )
+
+
 def test_crowdstrikelogscale_and_or_expression(logscale_backend: LogScaleBackend):
     assert (
         logscale_backend.convert(
@@ -146,7 +175,7 @@ def test_crowdstrikelogscale_and_or_expression(logscale_backend: LogScaleBackend
             )
         )
         == [
-            "fieldA=/^valueA1$/i or fieldA=/^valueA2$/i fieldB=/^valueB1$/i or fieldB=/^valueB2$/i"
+            "(fieldA=/^valueA1$/i or fieldA=/^valueA2$/i) (fieldB=/^valueB1$/i or fieldB=/^valueB2$/i)"
         ]
     )
 
@@ -173,7 +202,7 @@ def test_crowdstrikelogscale_or_and_expression(logscale_backend: LogScaleBackend
             )
         )
         == [
-            "(fieldA=/^valueA1$/i fieldB=/^valueB1$/i) or (fieldA=/^valueA2$/i fieldB=/^valueB2$/i)"
+            "fieldA=/^valueA1$/i fieldB=/^valueB1$/i or fieldA=/^valueA2$/i fieldB=/^valueB2$/i"
         ]
     )
 
@@ -202,7 +231,7 @@ def test_crowdstrikelogscale_or_and_expression_with_dots(
             )
         )
         == [
-            "(fieldA=/^valueA1\\.exe$/i fieldB=/^valueB1\\.exe$/i) or (fieldA=/^valueA2\\.exe$/i fieldB=/^valueB2\\.exe$/i)"
+            "fieldA=/^valueA1\\.exe$/i fieldB=/^valueB1\\.exe$/i or fieldA=/^valueA2\\.exe$/i fieldB=/^valueB2\\.exe$/i"
         ]
     )
 

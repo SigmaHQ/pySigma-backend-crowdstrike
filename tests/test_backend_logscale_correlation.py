@@ -937,8 +937,8 @@ correlation:
             "}\n"
             "| bucket(span=10m, limit=max, field=[host], function=collect([event_type], as=event_types))\n"
             '| splitString(field=event_types, by="\\n", as=matched)\n'
-            '| (array:contains(array="matched[]", value="base_rule_1")   '
-            'array:contains(array="matched[]", value="base_rule_2")) or '
+            '| array:contains(array="matched[]", value="base_rule_1")   '
+            'array:contains(array="matched[]", value="base_rule_2") or '
             'array:contains(array="matched[]", value="base_rule_3")'
         ]
     )
