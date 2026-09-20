@@ -480,7 +480,7 @@ def test_crowdstrike_falcon_pipeline_process_creation(
 ):
     assert (
         convert_falcon(process_creation_sigma_rule, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\test\\.exe$/i"
+        == "event_platform=/^Win$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\test\\.exe$/i"
     )
 
 def test_crowdstrike_falcon_image_with_placeholder(resolver : ProcessingPipelineResolver):
@@ -502,7 +502,7 @@ def test_crowdstrike_falcon_image_with_placeholder(resolver : ProcessingPipeline
         vars={"var": ["foo.exe", "bar.exe", "test.exe"]},
     )
     backend = LogScaleBackend(pipeline)
-    assert backend.convert(sigma_rule) == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i ImageFileName=/^foo\\.exe$/i or ImageFileName=/^bar\\.exe$/i or ImageFileName=/^test\\.exe$/i"
+    assert backend.convert(sigma_rule) == "event_platform=/^Win$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) (ImageFileName=/^foo\\.exe$/i or ImageFileName=/^bar\\.exe$/i or ImageFileName=/^test\\.exe$/i)"
 
 def test_crowdstrike_falcon_image_contains_with_trailing_backslash(resolver : ProcessingPipelineResolver):
     sigma_rule = SigmaCollection.from_yaml("""
@@ -526,7 +526,7 @@ def test_crowdstrike_falcon_pipeline_parentimage(
 ):
     assert (
         convert_falcon(process_creation_sigma_rule_parentimage, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ParentBaseFileName=/^parent\\.exe$/i"
+        == "event_platform=/^Win$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) CommandLine=/^test\\.exe foo bar$/i ParentBaseFileName=/^parent\\.exe$/i"
     )
 
 
@@ -535,7 +535,7 @@ def test_crowdstrike_falcon_pipeline_process_creation_all_fields(
 ):
     assert (
         convert_falcon(process_creation_sigma_rule_all_fields, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i ImageFileName=/^test$/i UserName=/^test$/i RawProcessId=/^test$/i SHA256HashData=/^test$/i ComputerName=/^test$/i"
+        == "event_platform=/^Win$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) ImageFileName=/^test$/i UserName=/^test$/i RawProcessId=/^test$/i SHA256HashData=/^test$/i ComputerName=/^test$/i"
     )
 
 
@@ -544,7 +544,7 @@ def test_crowdstrike_falcon_pipeline_process_creation_all_fields_nix(
 ):
     assert (
         convert_falcon(process_creation_sigma_rule_all_fields_nix, resolver)
-        == "event_platform=/^Lin$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i ImageFileName=/^test$/i UserName=/^test$/i RawProcessId=/^test$/i SHA256HashData=/^test$/i ComputerName=/^test$/i"
+        == "event_platform=/^Lin$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) ImageFileName=/^test$/i UserName=/^test$/i RawProcessId=/^test$/i SHA256HashData=/^test$/i ComputerName=/^test$/i"
     )
 
 
@@ -553,7 +553,7 @@ def test_crowdstrike_falcon_pipeline_integrity_level(
 ):
     assert (
         convert_falcon(process_creation_sigma_rule_integrity_level, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i IntegrityLevel=/^16384$/i"
+        == "event_platform=/^Win$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) IntegrityLevel=/^16384$/i"
     )
 
 
@@ -583,7 +583,7 @@ def test_crowdstrike_falcon_pipeline_replace_disk_name(
 ):
     assert (
         convert_falcon(process_creation_sigma_rule_fullimage_path, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/^\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe$/i"
+        == "event_platform=/^Win$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) CommandLine=/^test\\.exe foo bar$/i ImageFileName=/^\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe$/i"
     )
 
 
@@ -592,7 +592,7 @@ def test_crowdstrike_falcon_pipeline_replace_disk_name_colon(
 ):
     assert (
         convert_falcon(process_creation_sigma_rule_disk_name_colon, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\Windows\\\\System32\\\\cmd\\.exe$/i"
+        == "event_platform=/^Win$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\Windows\\\\System32\\\\cmd\\.exe$/i"
     )
 
 def test_crowdstrike_falcon_pipeline_replace_disk_name_contains(
@@ -600,7 +600,7 @@ def test_crowdstrike_falcon_pipeline_replace_disk_name_contains(
 ):
     assert (
         convert_falcon(process_creation_sigma_rule_disk_name_contains, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe/i"
+        == "event_platform=/^Win$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe/i"
     )
 
 def test_crowdstrike_falcon_pipeline_replace_disk_name_startswith(
@@ -608,7 +608,7 @@ def test_crowdstrike_falcon_pipeline_replace_disk_name_startswith(
 ):
     assert (
         convert_falcon(process_creation_sigma_rule_disk_name_startswith, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/^\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe/i"
+        == "event_platform=/^Win$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) CommandLine=/^test\\.exe foo bar$/i ImageFileName=/^\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe/i"
     )
 
 def test_crowdstrike_falcon_pipeline_replace_disk_name_endswith(
@@ -616,7 +616,7 @@ def test_crowdstrike_falcon_pipeline_replace_disk_name_endswith(
 ):
     assert (
         convert_falcon(process_creation_sigma_rule_disk_name_endswith, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe$/i"
+        == "event_platform=/^Win$/i (#event_simpleName=/^ProcessRollup2$/i or #event_simpleName=/^SyntheticProcessRollup2$/i) CommandLine=/^test\\.exe foo bar$/i ImageFileName=/\\\\Device\\\\HarddiskVolume.\\\\Windows\\\\System32\\\\cmd\\.exe$/i"
     )
 
 @pytest.mark.parametrize("field", unsupported_process_creation_fields)
@@ -662,7 +662,7 @@ def test_crowdstrike_falcon_dns_query(
 ):
     assert (
         convert_falcon(dns_query_sigma_rule, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^DnsRequest$/i DomainName=/^test\\.invalid$/i RequestType=/^1$/i or RequestType=/^2$/i or RequestType=/^5$/i or RequestType=/^12$/i or RequestType=/^15$/i or RequestType=/^16$/i or RequestType=/^28$/i or RequestType=/^255$/i IP4Records=/1\\.1\\.1\\.1/i or IP6Records=/1\\.1\\.1\\.1/i ContextBaseFileName=/^parent\\.exe$/i"
+        == "event_platform=/^Win$/i #event_simpleName=/^DnsRequest$/i DomainName=/^test\\.invalid$/i (RequestType=/^1$/i or RequestType=/^2$/i or RequestType=/^5$/i or RequestType=/^12$/i or RequestType=/^15$/i or RequestType=/^16$/i or RequestType=/^28$/i or RequestType=/^255$/i) (IP4Records=/1\\.1\\.1\\.1/i or IP6Records=/1\\.1\\.1\\.1/i) ContextBaseFileName=/^parent\\.exe$/i"
     )
 
 
@@ -724,7 +724,7 @@ def test_crowdstrike_falcon_pipeline_ps_script(
 ):
     assert (
         convert_falcon(ps_script_sigma_rule, resolver)
-        == "event_platform=/^Win$/i #event_simpleName=/^CommandHistory$/i or #event_simpleName=/^ScriptControlScanTelemetry$/i CommandHistory=/test/i or ScriptContent=/test/i"
+        == "event_platform=/^Win$/i (#event_simpleName=/^CommandHistory$/i or #event_simpleName=/^ScriptControlScanTelemetry$/i) (CommandHistory=/test/i or ScriptContent=/test/i)"
     )
 
 

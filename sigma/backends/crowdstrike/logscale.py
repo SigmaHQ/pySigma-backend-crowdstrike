@@ -76,8 +76,8 @@ class LogScaleBackend(TextQueryBackend):
     # Operator precedence: tuple of Condition{AND,OR,NOT} in order of precedence.
     precedence: ClassVar[Tuple[ConditionItem, ConditionItem, ConditionItem]] = (
         ConditionNOT,
-        ConditionOR,
         ConditionAND,
+        ConditionOR,
     )
     group_expression: ClassVar[str] = "({expr})"
 
