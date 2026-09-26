@@ -328,6 +328,23 @@ def incoming_network_connection_sigma_rule():
 
 
 @pytest.fixture
+def network_connection_no_initiated_sigma_rule():
+    return SigmaCollection.from_yaml(
+        """
+        title: Network Connection Test Without Initiated
+        status: test
+        logsource:
+            category: network_connection
+            product: windows
+        detection:
+            sel:
+                Image|contains: '$Recycle.Bin'
+            condition: sel
+        """
+    )
+
+
+@pytest.fixture
 def dns_query_sigma_rule():
     return SigmaCollection.from_yaml(
         """
@@ -657,6 +674,15 @@ def test_crowdstrike_falcon_pipeline_network_incoming_connect(
     )
 
 
+def test_crowdstrike_falcon_pipeline_network_no_initiated(
+    resolver: ProcessingPipelineResolver, network_connection_no_initiated_sigma_rule
+):
+    assert (
+        convert_falcon(network_connection_no_initiated_sigma_rule, resolver)
+        == "(#event_simpleName=/^NetworkConnectIP4$/i or #event_simpleName=/^NetworkReceiveAcceptIP4$/i) ContextBaseFileName=/\\$Recycle\\.Bin/i"
+    )
+
+
 def test_crowdstrike_falcon_dns_query(
     resolver: ProcessingPipelineResolver, dns_query_sigma_rule
 ):
@@ -797,6 +823,16 @@ def test_crowdstrike_fdr_network_connect_incoming(
     backend = TextQueryTestBackend(pipeline)
     assert backend.convert(incoming_network_connection_sigma_rule) == [
         'event_simpleName="NetworkReceiveAcceptIP4" and RemoteAddressIP4="1.2.3.4"'
+    ]
+
+
+def test_crowdstrike_fdr_network_no_initiated(
+    resolver: ProcessingPipelineResolver, network_connection_no_initiated_sigma_rule
+):
+    pipeline = resolver.resolve_pipeline("crowdstrike_fdr")
+    backend = TextQueryTestBackend(pipeline)
+    assert backend.convert(network_connection_no_initiated_sigma_rule) == [
+        '(event_simpleName in ("NetworkConnectIP4", "NetworkReceiveAcceptIP4")) and ContextBaseFileName contains "$Recycle.Bin"'
     ]
 
 

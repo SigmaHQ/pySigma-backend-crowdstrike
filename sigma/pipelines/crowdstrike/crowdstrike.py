@@ -29,6 +29,7 @@ from sigma.processing.conditions import (
     MatchStringCondition,
 )
 from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
+from sigma.processing.condition_expressions import parse_condition_expression
 from sigma.processing.finalization import ConcatenateQueriesFinalizer
 
 
@@ -641,6 +642,25 @@ def crowdstrike_fdr_pipeline() -> ProcessingPipeline:
                     logsource_windows_network_connection_initiated(False),
                 ],
             ),
+            ProcessingItem(
+                identifier="cql_network_connection_eventtype_both",
+                transformation=AddConditionTransformation(
+                    {
+                        "event_simpleName": [
+                            "NetworkConnectIP4",
+                            "NetworkReceiveAcceptIP4",
+                        ]
+                    }
+                ),
+                rule_conditions={
+                    "logsource": logsource_windows_network_connection(),
+                    "init_true": logsource_windows_network_connection_initiated(True),
+                    "init_false": logsource_windows_network_connection_initiated(False),
+                },
+                rule_condition_expression=parse_condition_expression(
+                    "logsource and not (init_true or init_false)"
+                ),
+            ),
             # Driver Load
             ProcessingItem(
                 identifier="cql_driverload_eventtype",
@@ -788,6 +808,25 @@ def crowdstrike_falcon_pipeline() -> ProcessingPipeline:
                     logsource_windows_network_connection(),
                     logsource_windows_network_connection_initiated(False),
                 ],
+            ),
+            ProcessingItem(
+                identifier="cql_network_connection_eventtype_both",
+                transformation=AddConditionTransformation(
+                    {
+                        "#event_simpleName": [
+                            "NetworkConnectIP4",
+                            "NetworkReceiveAcceptIP4",
+                        ]
+                    }
+                ),
+                rule_conditions={
+                    "logsource": logsource_windows_network_connection(),
+                    "init_true": logsource_windows_network_connection_initiated(True),
+                    "init_false": logsource_windows_network_connection_initiated(False),
+                },
+                rule_condition_expression=parse_condition_expression(
+                    "logsource and not (init_true or init_false)"
+                ),
             ),
             # Driver Load
             ProcessingItem(
