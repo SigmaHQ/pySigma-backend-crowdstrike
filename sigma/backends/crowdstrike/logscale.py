@@ -212,7 +212,7 @@ class LogScaleBackend(TextQueryBackend):
     # Value not bound to a field
     # We want these to be case insensivitive so use the regex representation again
     unbound_value_str_expression: ClassVar[str] = (
-        "/{value}/i"  # Expression for string value not bound to a field as format string with placeholder {value}
+        "/{regex}/i"  # Expression for string value not bound to a field as format string with placeholder {value} or {regex}
     )
     unbound_value_num_expression: ClassVar[str] = (
         "/{value}/i"  # Expression for number value not bound to a field as format string with placeholder {value}
