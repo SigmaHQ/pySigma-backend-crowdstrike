@@ -74,6 +74,33 @@ def test_crowdstrikelogscale_escaped_wildcards(logscale_backend: LogScaleBackend
     )
 
 
+def test_crowdstrikelogscale_keywords(logscale_backend: LogScaleBackend):
+    assert (
+        logscale_backend.convert(
+            SigmaCollection.from_yaml(
+                """
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                keywords:
+                    - /etc/passwd
+                    - value A*$^.|?()[]+{}
+                    - valueB\\*
+                condition: keywords
+        """
+            )
+        )
+        == [
+            "/\\/etc\\/passwd/i or "
+            "/value A.*\\$\\^\\.\\|.\\(\\)\\[\\]\\+\\{\\}/i or "
+            "/valueB\\*/i"
+        ]
+    )
+
+
 def test_crowdstrikelogscale_and_expression_startswith(
     logscale_backend: LogScaleBackend,
 ):
