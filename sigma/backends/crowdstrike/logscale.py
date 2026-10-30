@@ -429,13 +429,13 @@ class LogScaleBackend(TextQueryBackend):
         method: str,
         search: str,
     ) -> str:
-        """Escape/quote the value_* condition field like group-by fields.
+        """Reject a list of fields as the value_* condition field.
 
-        The framework passes the condition field reference through verbatim,
-        whereas group-by fields are escaped and quoted. This normalises the two
-        so a condition field containing whitespace or special characters (e.g.
-        ``field: "user name"``) produces valid LogScale. A list of fields is
-        rejected, since a scalar aggregation over multiple fields is undefined.
+        pySigma escapes and quotes the condition field like group-by fields, so
+        a field containing whitespace or special characters (e.g.
+        ``field: "user name"``) already produces valid LogScale. A list of
+        fields is rejected, since a scalar aggregation over multiple fields is
+        undefined.
         """
         condition = rule.condition
         if (
@@ -450,14 +450,9 @@ class LogScaleBackend(TextQueryBackend):
                 "Correlation condition field must be a single field name",
                 source=rule.source,
             )
-        original_fieldref = condition.fieldref
-        condition.fieldref = self.escape_and_quote_field(original_fieldref)
-        try:
-            return super().convert_correlation_aggregation_from_template(
-                rule, correlation_type, method, search
-            )
-        finally:
-            condition.fieldref = original_fieldref
+        return super().convert_correlation_aggregation_from_template(
+            rule, correlation_type, method, search
+        )
 
     def convert_condition_field_eq_val_cidr(
         self,
