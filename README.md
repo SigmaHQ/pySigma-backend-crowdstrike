@@ -15,12 +15,14 @@ Further it contains the following processing pipelines under `sigma.pipelines.cr
 The following categories and products are supported by the pipelines:
 | category | product | CrowdStrike event_simpleName |
 |-|-|-|
-|`process_creation` | `windows`, `linux`| ProcessRollup2, SyntheticProcessRollup2 |
+|`process_creation` | `windows`, `linux`, `macos` (see note)| ProcessRollup2, SyntheticProcessRollup2 |
 |`network_connection` | `windows`| NetworkConnectIP4, NetworkReceiveAcceptIP4 |
 |`dns_query` | `windows`| DnsRequest |
 |`image_load` | `windows`| ClassifiedModuleLoad |
 |`driver_load` | `windows`| DriverLoad |
 |`ps_script` | `windows`| CommandHistory, ScriptControlScanTelemetry |
+
+Note: `macos` supports `process_creation` only, and rules for other macOS categories fail to convert (they previously converted without a platform condition). On macOS only the `Image`, `CommandLine`, `ParentImage` and `sha256` fields are supported (`ParentBaseFileName` too, when a rule is written with the already renamed field), based on the fields Falcon was observed to populate on a macOS host; other fields fail, including a correlation's `group-by` and condition `field`. Correlations that use `aliases` fail for macOS (also through chained correlations); group by a supported field name instead. A correlation that mixes Windows and macOS rules is checked too, so grouping it by a Windows-only field now fails. Falcon only records the parent's basename, so `ParentImage` must be `endswith` a literal file name (optionally `/name` or `*/name`), `contains` a literal without `/` or wildcards, or null; a literal that isn't the basename of the usual app binary (for example the bundle directory `Terminal.app`) never matches, and `contains` only in a detection that the condition never uses under `not`. `|exists`, keyword searches and `Image` values with a backslash fail.
 
 There's likely more windows categories that can be supported by the pipelines; We will be adding support gradually as availability allows. 
 
