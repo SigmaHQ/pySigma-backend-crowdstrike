@@ -166,7 +166,7 @@ class MacOSCorrelationAliasGuard(Transformation):
 
 
 class MacOSExistsGuard(DetectionItemTransformation):
-    """Reject |exists on every macOS field: this package's LogScaleBackend cannot express it."""
+    """Reject |exists on every macOS field in the Falcon pipeline: this package's LogScaleBackend cannot express it."""
 
     def apply_detection_item(self, detection_item):
         if SigmaExistsModifier in detection_item.modifiers:
@@ -451,11 +451,6 @@ def common_processing_items():
         ProcessingItem(
             identifier="cql_macos_unsupported_field",
             transformation=MacOSUnsupportedField(),
-            rule_conditions=[logsource_macos_process_creation()],
-        ),
-        ProcessingItem(
-            identifier="cql_macos_exists",
-            transformation=MacOSExistsGuard(),
             rule_conditions=[logsource_macos_process_creation()],
         ),
         ProcessingItem(
@@ -1115,6 +1110,12 @@ def crowdstrike_falcon_pipeline() -> ProcessingPipeline:
         name="CrowdStrike Falcon Pipeline",
         priority=10,
         items=[
+            # Falcon only: the FDR pipeline is also used with backends that can express exists.
+            ProcessingItem(
+                identifier="cql_macos_exists",
+                transformation=MacOSExistsGuard(),
+                rule_conditions=[logsource_macos_process_creation()],
+            ),
             # Process Creation
             ProcessingItem(
                 identifier="cql_process_creation_eventtype",

@@ -1058,9 +1058,8 @@ def test_crowdstrike_macos_parentimage_escaped_question_mark(resolver):
 @pytest.mark.parametrize("pipeline", ["crowdstrike_falcon", "crowdstrike_fdr"])
 def test_crowdstrike_macos_parentimage_exists_rejected(resolver, pipeline, exists):
     backend = TextQueryTestBackend(resolver.resolve_pipeline(pipeline))
-    with pytest.raises(
-        SigmaTransformationError, match="ParentImage.exists is not supported"
-    ):
+    # Falcon: the exists guard; FDR: the ParentImage guard (only endswith, contains or null)
+    with pytest.raises(SigmaTransformationError, match="ParentImage.*[Ee]xists"):
         backend.convert(macos_rule(f"                ParentImage|exists: {exists}"))
 
 
@@ -1304,11 +1303,20 @@ def test_crowdstrike_macos_parentimage_contains_multi_positive(resolver):
 
 
 @pytest.mark.parametrize("field", ["Image", "CommandLine", "ParentImage", "sha256"])
-@pytest.mark.parametrize("pipeline", ["crowdstrike_falcon", "crowdstrike_fdr"])
-def test_crowdstrike_macos_exists_rejected_on_every_field(resolver, pipeline, field):
-    backend = TextQueryTestBackend(resolver.resolve_pipeline(pipeline))
+def test_crowdstrike_macos_exists_rejected_on_every_field_falcon(resolver, field):
+    backend = TextQueryTestBackend(resolver.resolve_pipeline("crowdstrike_falcon"))
     with pytest.raises(SigmaTransformationError, match="exists is not supported"):
         backend.convert(macos_rule(f"                {field}|exists: true"))
+
+
+@pytest.mark.parametrize(
+    "field,mapped",
+    [("Image", "ImageFileName"), ("CommandLine", "CommandLine"), ("sha256", "SHA256HashData")],
+)
+def test_crowdstrike_macos_exists_converts_on_fdr(resolver, field, mapped):
+    # The FDR pipeline is also used with backends that can express exists (Splunk and others).
+    backend = TextQueryTestBackend(resolver.resolve_pipeline("crowdstrike_fdr"))
+    assert f"exists({mapped})" in backend.convert(macos_rule(f"                {field}|exists: true"))[0]
 
 
 @pytest.mark.parametrize("pipeline", ["crowdstrike_falcon", "crowdstrike_fdr"])
